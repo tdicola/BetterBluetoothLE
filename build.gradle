@@ -5,7 +5,7 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:0.9.+'
-        classpath 'org.robolectric.gradle:gradle-android-test-plugin:0.9.2'
+        classpath 'org.robolectric.gradle:gradle-android-test-plugin:0.9.3'
     }
 }
 
@@ -39,11 +39,15 @@ android {
         }
     }
     sourceSets {
-        main {
-            manifest.srcFile 'AndroidManifest.xml'
-        }
         instrumentTest {
-            setRoot('src/test')
+            java {
+                srcDir 'src/test/java'
+            }
+        }
+        androidTest {
+            java {
+                srcDir 'src/test/java'
+            }
         }
     }
 }
@@ -62,8 +66,8 @@ dependencies {
 
     compile 'org.jdeferred:jdeferred-android:1.2.0'
 
-    instrumentTestCompile 'junit:junit:4.11'
-    instrumentTestCompile('org.robolectric:robolectric:2.3-SNAPSHOT') {
+    testCompile 'junit:junit:4.11'
+    testCompile('org.robolectric:robolectric:2.3-SNAPSHOT') {
         exclude module: 'classworlds'
         exclude module: 'maven-artifact'
         exclude module: 'maven-artifact-manager'
@@ -82,9 +86,33 @@ dependencies {
         exclude module: 'wagon-http-shared'
         exclude module: 'wagon-provider-api'
     }
-    instrumentTestCompile 'com.squareup:fest-android:1.0.+'
-    instrumentTestCompile 'org.mockito:mockito-all:1.9.5'
-    instrumentTestCompile 'org.powermock:powermock-mockito-release-full:1.5.4'
+    testCompile 'com.squareup:fest-android:1.0.+'
+    testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile 'org.powermock:powermock-mockito-release-full:1.5.4'
+
+    androidTestCompile 'junit:junit:4.11'
+    androidTestCompile('org.robolectric:robolectric:2.3-SNAPSHOT') {
+        exclude module: 'classworlds'
+        exclude module: 'maven-artifact'
+        exclude module: 'maven-artifact-manager'
+        exclude module: 'maven-error-diagnostics'
+        exclude module: 'maven-model'
+        exclude module: 'maven-plugin-registry'
+        exclude module: 'maven-profile'
+        exclude module: 'maven-project'
+        exclude module: 'maven-settings'
+        exclude module: 'nekohtml'
+        exclude module: 'plexus-container-default'
+        exclude module: 'plexus-interpolation'
+        exclude module: 'plexus-utils'
+        exclude module: 'wagon-file'
+        exclude module: 'wagon-http-lightweight'
+        exclude module: 'wagon-http-shared'
+        exclude module: 'wagon-provider-api'
+    }
+    androidTestCompile 'com.squareup:fest-android:1.0.+'
+    androidTestCompile 'org.mockito:mockito-all:1.9.5'
+    androidTestCompile 'org.powermock:powermock-mockito-release-full:1.5.4'
 }
 
 apply plugin: 'idea'
