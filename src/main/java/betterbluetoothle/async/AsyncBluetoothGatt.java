@@ -162,10 +162,6 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     public void disconnect() {
         checkConnected();
         gatt.disconnect();
-        if (connect != null && connect.isPending()) {
-            // Reject any in progress connection.
-            connect.reject(null);
-        }
         if (disconnect != null && disconnect.isPending()) {
             // Resolve disconnect deferred.
             disconnect.resolve(null);
