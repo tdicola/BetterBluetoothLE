@@ -3,6 +3,7 @@ package betterbluetoothle.tests;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.content.Context;
 
 import org.jdeferred.DoneCallback;
@@ -28,11 +29,13 @@ public class AsyncBluetoothGattTest {
 
     private int testRssi;
     private BluetoothGattCharacteristic testCh;
+    private BluetoothGattDescriptor testDs;
 
     @Before
     public void setup() {
         testRssi = 0;
         testCh = null;
+        testDs = null;
     }
 
     @Test
@@ -423,4 +426,359 @@ public class AsyncBluetoothGattTest {
         });
         assertThat(testCh).isEqualTo(ch2);
     }
+
+    @Test
+    public void test_write_characteristic_immediate_failure_rejects_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+
+        when(mockGatt.writeCharacteristic(ch)).thenReturn(false);
+        Promise<BluetoothGattCharacteristic, Integer, Void> writeCh = gatt.writeCharacteristic(ch);
+
+        assertThat(writeCh.isPending()).isFalse();
+        assertThat(writeCh.isRejected()).isTrue();
+        assertThat(writeCh.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_write_characteristic_is_pending_before_update() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.writeCharacteristic(ch)).thenReturn(true);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<BluetoothGattCharacteristic, Integer, Void> writeCh = gatt.writeCharacteristic(ch);
+
+        assertThat(writeCh.isPending()).isTrue();
+        assertThat(writeCh.isRejected()).isFalse();
+        assertThat(writeCh.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_write_characteristic_success_resolves_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.writeCharacteristic(ch)).thenReturn(true);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<BluetoothGattCharacteristic, Integer, Void> writeCh = gatt.writeCharacteristic(ch);
+        gatt.onCharacteristicWrite(mockGatt, ch, BluetoothGatt.GATT_SUCCESS);
+
+        assertThat(writeCh.isPending()).isFalse();
+        assertThat(writeCh.isRejected()).isFalse();
+        assertThat(writeCh.isResolved()).isTrue();
+        writeCh.done(new DoneCallback<BluetoothGattCharacteristic>() {
+            @Override
+            public void onDone(BluetoothGattCharacteristic result) {
+                testCh = result;
+            }
+        });
+        assertThat(testCh).isEqualTo(ch);
+    }
+
+    @Test
+    public void test_write_characteristic_failure_rejects_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.writeCharacteristic(ch)).thenReturn(true);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<BluetoothGattCharacteristic, Integer, Void> writeCh = gatt.writeCharacteristic(ch);
+        gatt.onCharacteristicWrite(mockGatt, ch, BluetoothGatt.GATT_FAILURE);
+
+        assertThat(writeCh.isPending()).isFalse();
+        assertThat(writeCh.isRejected()).isTrue();
+        assertThat(writeCh.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_write_multiple_characteristics() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+
+        BluetoothGattCharacteristic ch1 = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.writeCharacteristic(ch1)).thenReturn(true);
+        when(ch1.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic ch2 = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.writeCharacteristic(ch2)).thenReturn(true);
+        when(ch2.getUuid()).thenReturn(TEST_UUID2);
+        Promise<BluetoothGattCharacteristic, Integer, Void> writeCh1 = gatt.writeCharacteristic(ch1);
+        Promise<BluetoothGattCharacteristic, Integer, Void> writeCh2 = gatt.writeCharacteristic(ch2);
+        gatt.onCharacteristicWrite(mockGatt, ch2, BluetoothGatt.GATT_SUCCESS);
+
+        assertThat(writeCh1.isPending()).isTrue();
+        assertThat(writeCh1.isRejected()).isFalse();
+        assertThat(writeCh1.isResolved()).isFalse();
+        assertThat(writeCh2.isPending()).isFalse();
+        assertThat(writeCh2.isRejected()).isFalse();
+        assertThat(writeCh2.isResolved()).isTrue();
+        writeCh2.done(new DoneCallback<BluetoothGattCharacteristic>() {
+            @Override
+            public void onDone(BluetoothGattCharacteristic result) {
+                testCh = result;
+            }
+        });
+        assertThat(testCh).isEqualTo(ch2);
+    }
+
+    @Test
+    public void test_read_descriptor_immediate_failure_rejects_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+
+        when(mockGatt.readDescriptor(ds)).thenReturn(false);
+        Promise<BluetoothGattDescriptor, Integer, Void> readDs = gatt.readDescriptor(ds);
+
+        assertThat(readDs.isPending()).isFalse();
+        assertThat(readDs.isRejected()).isTrue();
+        assertThat(readDs.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_read_descriptor_is_pending_before_update() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.readDescriptor(ds)).thenReturn(true);
+        when(ds.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<BluetoothGattDescriptor, Integer, Void> readDs = gatt.readDescriptor(ds);
+
+        assertThat(readDs.isPending()).isTrue();
+        assertThat(readDs.isRejected()).isFalse();
+        assertThat(readDs.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_read_descriptor_success_resolves_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.readDescriptor(ds)).thenReturn(true);
+        when(ds.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<BluetoothGattDescriptor, Integer, Void> readDs = gatt.readDescriptor(ds);
+        gatt.onDescriptorRead(mockGatt, ds, BluetoothGatt.GATT_SUCCESS);
+
+        assertThat(readDs.isPending()).isFalse();
+        assertThat(readDs.isRejected()).isFalse();
+        assertThat(readDs.isResolved()).isTrue();
+        readDs.done(new DoneCallback<BluetoothGattDescriptor>() {
+            @Override
+            public void onDone(BluetoothGattDescriptor result) {
+                testDs = result;
+            }
+        });
+        assertThat(testDs).isEqualTo(ds);
+    }
+
+    @Test
+    public void test_read_descriptor_failure_rejects_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.readDescriptor(ds)).thenReturn(true);
+        when(ds.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<BluetoothGattDescriptor, Integer, Void> readDs = gatt.readDescriptor(ds);
+        gatt.onDescriptorRead(mockGatt, ds, BluetoothGatt.GATT_FAILURE);
+
+        assertThat(readDs.isPending()).isFalse();
+        assertThat(readDs.isRejected()).isTrue();
+        assertThat(readDs.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_read_multiple_descriptors() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+
+        BluetoothGattDescriptor ds1 = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.readDescriptor(ds1)).thenReturn(true);
+        when(ds1.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattDescriptor ds2 = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.readDescriptor(ds2)).thenReturn(true);
+        when(ds2.getUuid()).thenReturn(TEST_UUID2);
+        Promise<BluetoothGattDescriptor, Integer, Void> readDs1 = gatt.readDescriptor(ds1);
+        Promise<BluetoothGattDescriptor, Integer, Void> readDs2 = gatt.readDescriptor(ds2);
+        gatt.onDescriptorRead(mockGatt, ds2, BluetoothGatt.GATT_SUCCESS);
+
+        assertThat(readDs1.isPending()).isTrue();
+        assertThat(readDs1.isRejected()).isFalse();
+        assertThat(readDs1.isResolved()).isFalse();
+        assertThat(readDs2.isPending()).isFalse();
+        assertThat(readDs2.isRejected()).isFalse();
+        assertThat(readDs2.isResolved()).isTrue();
+        readDs2.done(new DoneCallback<BluetoothGattDescriptor>() {
+            @Override
+            public void onDone(BluetoothGattDescriptor result) {
+                testDs = result;
+            }
+        });
+        assertThat(testDs).isEqualTo(ds2);
+    }
+
+    @Test
+    public void test_write_descriptor_immediate_failure_rejects_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+
+        when(mockGatt.writeDescriptor(ds)).thenReturn(false);
+        Promise<BluetoothGattDescriptor, Integer, Void> writeDs = gatt.writeDescriptor(ds);
+
+        assertThat(writeDs.isPending()).isFalse();
+        assertThat(writeDs.isRejected()).isTrue();
+        assertThat(writeDs.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_write_descriptor_is_pending_before_update() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.writeDescriptor(ds)).thenReturn(true);
+        when(ds.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<BluetoothGattDescriptor, Integer, Void> writeDs = gatt.writeDescriptor(ds);
+
+        assertThat(writeDs.isPending()).isTrue();
+        assertThat(writeDs.isRejected()).isFalse();
+        assertThat(writeDs.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_write_descriptor_success_resolves_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.writeDescriptor(ds)).thenReturn(true);
+        when(ds.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<BluetoothGattDescriptor, Integer, Void> writeDs = gatt.writeDescriptor(ds);
+        gatt.onDescriptorWrite(mockGatt, ds, BluetoothGatt.GATT_SUCCESS);
+
+        assertThat(writeDs.isPending()).isFalse();
+        assertThat(writeDs.isRejected()).isFalse();
+        assertThat(writeDs.isResolved()).isTrue();
+        writeDs.done(new DoneCallback<BluetoothGattDescriptor>() {
+            @Override
+            public void onDone(BluetoothGattDescriptor result) {
+                testDs = result;
+            }
+        });
+        assertThat(testDs).isEqualTo(ds);
+    }
+
+    @Test
+    public void test_write_descriptor_failure_rejects_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.writeDescriptor(ds)).thenReturn(true);
+        when(ds.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<BluetoothGattDescriptor, Integer, Void> writeDs = gatt.writeDescriptor(ds);
+        gatt.onDescriptorWrite(mockGatt, ds, BluetoothGatt.GATT_FAILURE);
+
+        assertThat(writeDs.isPending()).isFalse();
+        assertThat(writeDs.isRejected()).isTrue();
+        assertThat(writeDs.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_write_multiple_descriptors() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+
+        BluetoothGattDescriptor ds1 = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.writeDescriptor(ds1)).thenReturn(true);
+        when(ds1.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattDescriptor ds2 = mock(BluetoothGattDescriptor.class);
+        when(mockGatt.writeDescriptor(ds2)).thenReturn(true);
+        when(ds2.getUuid()).thenReturn(TEST_UUID2);
+        Promise<BluetoothGattDescriptor, Integer, Void> writeDs1 = gatt.writeDescriptor(ds1);
+        Promise<BluetoothGattDescriptor, Integer, Void> writeDs2 = gatt.writeDescriptor(ds2);
+        gatt.onDescriptorWrite(mockGatt, ds2, BluetoothGatt.GATT_SUCCESS);
+
+        assertThat(writeDs1.isPending()).isTrue();
+        assertThat(writeDs1.isRejected()).isFalse();
+        assertThat(writeDs1.isResolved()).isFalse();
+        assertThat(writeDs2.isPending()).isFalse();
+        assertThat(writeDs2.isRejected()).isFalse();
+        assertThat(writeDs2.isResolved()).isTrue();
+        writeDs2.done(new DoneCallback<BluetoothGattDescriptor>() {
+            @Override
+            public void onDone(BluetoothGattDescriptor result) {
+                testDs = result;
+            }
+        });
+        assertThat(testDs).isEqualTo(ds2);
+    }
+
 }
