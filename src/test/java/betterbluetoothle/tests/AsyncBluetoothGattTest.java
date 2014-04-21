@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.content.Context;
 
 import org.jdeferred.DoneCallback;
+import org.jdeferred.ProgressCallback;
 import org.jdeferred.Promise;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,12 +31,14 @@ public class AsyncBluetoothGattTest {
     private int testRssi;
     private BluetoothGattCharacteristic testCh;
     private BluetoothGattDescriptor testDs;
+    private int testCount;
 
     @Before
     public void setup() {
         testRssi = 0;
         testCh = null;
         testDs = null;
+        testCount = 0;
     }
 
     @Test
@@ -779,6 +782,128 @@ public class AsyncBluetoothGattTest {
             }
         });
         assertThat(testDs).isEqualTo(ds2);
+    }
+
+    @Test
+    public void test_set_notification_immediate_failure_rejects_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+
+        when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(false);
+        Promise<Void, Void, BluetoothGattCharacteristic> notifyCh = gatt.setCharacteristicNotification(ch, true);
+
+        assertThat(notifyCh.isPending()).isFalse();
+        assertThat(notifyCh.isRejected()).isTrue();
+        assertThat(notifyCh.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_set_notification_is_pending_on_success() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(true);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<Void, Void, BluetoothGattCharacteristic> notifyCh = gatt.setCharacteristicNotification(ch, true);
+
+        assertThat(notifyCh.isPending()).isTrue();
+        assertThat(notifyCh.isRejected()).isFalse();
+        assertThat(notifyCh.isResolved()).isFalse();
+    }
+
+    @Test
+    public void test_set_notification_update_calls_progress() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(true);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<Void, Void, BluetoothGattCharacteristic> notifyCh = gatt.setCharacteristicNotification(ch, true);
+        notifyCh.progress(new ProgressCallback<BluetoothGattCharacteristic>() {
+            @Override
+            public void onProgress(BluetoothGattCharacteristic progress) {
+                testCh = progress;
+                testCount += 1;
+            }
+        });
+        gatt.onCharacteristicChanged(mockGatt, ch);
+        gatt.onCharacteristicChanged(mockGatt, ch);
+
+        assertThat(testCh).isEqualTo(ch);
+        assertThat(testCount).isEqualTo(2);
+    }
+
+    @Test
+    public void test_set_notification_disable_resolves_promise() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+        BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(true);
+        when(mockGatt.setCharacteristicNotification(ch, false)).thenReturn(true);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+
+        Promise<Void, Void, BluetoothGattCharacteristic> notifyCh = gatt.setCharacteristicNotification(ch, true);
+        Promise<Void, Void, BluetoothGattCharacteristic> disableCh = gatt.setCharacteristicNotification(ch, false);
+
+        assertThat(notifyCh.isPending()).isFalse();
+        assertThat(notifyCh.isRejected()).isFalse();
+        assertThat(notifyCh.isResolved()).isTrue();
+        assertThat(disableCh.isPending()).isFalse();
+        assertThat(disableCh.isRejected()).isFalse();
+        assertThat(disableCh.isResolved()).isTrue();
+    }
+
+    @Test
+    public void test_set_notification_multiple_characteristics() throws Exception {
+        BluetoothDevice device = mock(BluetoothDevice.class);
+        Context context = mock(Context.class);
+        BluetoothGatt mockGatt = mock(BluetoothGatt.class);
+        AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
+        when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
+        gatt.connect();
+
+        BluetoothGattCharacteristic ch1 = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.setCharacteristicNotification(ch1, true)).thenReturn(true);
+        when(ch1.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic ch2 = mock(BluetoothGattCharacteristic.class);
+        when(mockGatt.setCharacteristicNotification(ch2, true)).thenReturn(true);
+        when(ch2.getUuid()).thenReturn(TEST_UUID2);
+        Promise<Void, Void, BluetoothGattCharacteristic> notifyCh1 = gatt.setCharacteristicNotification(ch1, true);
+        Promise<Void, Void, BluetoothGattCharacteristic> notifyCh2 = gatt.setCharacteristicNotification(ch2, true);
+        notifyCh1.progress(new ProgressCallback<BluetoothGattCharacteristic>() {
+            @Override
+            public void onProgress(BluetoothGattCharacteristic progress) {
+                testCount = -1;
+            }
+        });
+        notifyCh2.progress(new ProgressCallback<BluetoothGattCharacteristic>() {
+            @Override
+            public void onProgress(BluetoothGattCharacteristic progress) {
+                testCount = 1;
+            }
+        });
+        gatt.onCharacteristicChanged(mockGatt, ch2);
+
+        assertThat(testCount).isEqualTo(1);
     }
 
 }
