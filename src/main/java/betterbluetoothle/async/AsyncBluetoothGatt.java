@@ -36,13 +36,10 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     private HashMap<DescriptorKey, DeferredObject<BluetoothGattDescriptor, Integer, Void>> readDescriptor;
     private HashMap<DescriptorKey, DeferredObject<BluetoothGattDescriptor, Integer, Void>> writeDescriptor;
 
+    // Key for uniquely identifying a characteristic based on its UUID and parent service UUID.
     private class CharacteristicKey {
         private UUID service;
         private UUID characteristic;
-        public CharacteristicKey(UUID service, UUID characteristic) {
-            this.service = service;
-            this.characteristic = characteristic;
-        }
         public CharacteristicKey(BluetoothGattCharacteristic characteristic) {
             this.service = characteristic.getService().getUuid();
             this.characteristic = characteristic.getUuid();
@@ -70,15 +67,11 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         }
     }
 
+    // Key for uniquely identifying a descriptor based on its UUID, parent characteristic UUID, and parent service UUID.
     private class DescriptorKey {
         private UUID service;
         private UUID characteristic;
         private UUID descriptor;
-        public DescriptorKey(UUID service, UUID characteristic, UUID descriptor) {
-            this.service = service;
-            this.characteristic = characteristic;
-            this.descriptor = descriptor;
-        }
         public DescriptorKey(BluetoothGattDescriptor descriptor) {
             this.service = descriptor.getCharacteristic().getService().getUuid();
             this.characteristic = descriptor.getCharacteristic().getUuid();
