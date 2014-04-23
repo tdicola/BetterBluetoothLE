@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 
 import org.jdeferred.DoneCallback;
@@ -320,7 +321,11 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
 
         when(mockGatt.readCharacteristic(ch)).thenReturn(false);
         Promise<BluetoothGattCharacteristic, Integer, Void> readCh = gatt.readCharacteristic(ch);
@@ -338,9 +343,12 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
-        when(mockGatt.readCharacteristic(ch)).thenReturn(true);
         when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
+        when(mockGatt.readCharacteristic(ch)).thenReturn(true);
 
         Promise<BluetoothGattCharacteristic, Integer, Void> readCh = gatt.readCharacteristic(ch);
 
@@ -357,9 +365,12 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
-        when(mockGatt.readCharacteristic(ch)).thenReturn(true);
         when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
+        when(mockGatt.readCharacteristic(ch)).thenReturn(true);
 
         Promise<BluetoothGattCharacteristic, Integer, Void> readCh = gatt.readCharacteristic(ch);
         gatt.onCharacteristicRead(mockGatt, ch, BluetoothGatt.GATT_SUCCESS);
@@ -384,9 +395,12 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
-        when(mockGatt.readCharacteristic(ch)).thenReturn(true);
         when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
+        when(mockGatt.readCharacteristic(ch)).thenReturn(true);
 
         Promise<BluetoothGattCharacteristic, Integer, Void> readCh = gatt.readCharacteristic(ch);
         gatt.onCharacteristicRead(mockGatt, ch, BluetoothGatt.GATT_FAILURE);
@@ -405,12 +419,16 @@ public class AsyncBluetoothGattTest {
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
 
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch1 = mock(BluetoothGattCharacteristic.class);
         when(mockGatt.readCharacteristic(ch1)).thenReturn(true);
         when(ch1.getUuid()).thenReturn(TEST_UUID1);
+        when(ch1.getService()).thenReturn(service);
         BluetoothGattCharacteristic ch2 = mock(BluetoothGattCharacteristic.class);
         when(mockGatt.readCharacteristic(ch2)).thenReturn(true);
         when(ch2.getUuid()).thenReturn(TEST_UUID2);
+        when(ch2.getService()).thenReturn(service);
         Promise<BluetoothGattCharacteristic, Integer, Void> readCh1 = gatt.readCharacteristic(ch1);
         Promise<BluetoothGattCharacteristic, Integer, Void> readCh2 = gatt.readCharacteristic(ch2);
         gatt.onCharacteristicRead(mockGatt, ch2, BluetoothGatt.GATT_SUCCESS);
@@ -438,7 +456,11 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
 
         when(mockGatt.writeCharacteristic(ch)).thenReturn(false);
         Promise<BluetoothGattCharacteristic, Integer, Void> writeCh = gatt.writeCharacteristic(ch);
@@ -456,9 +478,12 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
         when(mockGatt.writeCharacteristic(ch)).thenReturn(true);
         when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
 
         Promise<BluetoothGattCharacteristic, Integer, Void> writeCh = gatt.writeCharacteristic(ch);
 
@@ -475,9 +500,12 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
         when(mockGatt.writeCharacteristic(ch)).thenReturn(true);
         when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
 
         Promise<BluetoothGattCharacteristic, Integer, Void> writeCh = gatt.writeCharacteristic(ch);
         gatt.onCharacteristicWrite(mockGatt, ch, BluetoothGatt.GATT_SUCCESS);
@@ -502,9 +530,12 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
         when(mockGatt.writeCharacteristic(ch)).thenReturn(true);
         when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
 
         Promise<BluetoothGattCharacteristic, Integer, Void> writeCh = gatt.writeCharacteristic(ch);
         gatt.onCharacteristicWrite(mockGatt, ch, BluetoothGatt.GATT_FAILURE);
@@ -523,12 +554,16 @@ public class AsyncBluetoothGattTest {
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
 
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch1 = mock(BluetoothGattCharacteristic.class);
         when(mockGatt.writeCharacteristic(ch1)).thenReturn(true);
         when(ch1.getUuid()).thenReturn(TEST_UUID1);
+        when(ch1.getService()).thenReturn(service);
         BluetoothGattCharacteristic ch2 = mock(BluetoothGattCharacteristic.class);
         when(mockGatt.writeCharacteristic(ch2)).thenReturn(true);
         when(ch2.getUuid()).thenReturn(TEST_UUID2);
+        when(ch2.getService()).thenReturn(service);
         Promise<BluetoothGattCharacteristic, Integer, Void> writeCh1 = gatt.writeCharacteristic(ch1);
         Promise<BluetoothGattCharacteristic, Integer, Void> writeCh2 = gatt.writeCharacteristic(ch2);
         gatt.onCharacteristicWrite(mockGatt, ch2, BluetoothGatt.GATT_SUCCESS);
@@ -556,7 +591,13 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+        when(ds.getCharacteristic()).thenReturn(characteristic);
 
         when(mockGatt.readDescriptor(ds)).thenReturn(false);
         Promise<BluetoothGattDescriptor, Integer, Void> readDs = gatt.readDescriptor(ds);
@@ -574,9 +615,15 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
         when(mockGatt.readDescriptor(ds)).thenReturn(true);
         when(ds.getUuid()).thenReturn(TEST_UUID1);
+        when(ds.getCharacteristic()).thenReturn(characteristic);
 
         Promise<BluetoothGattDescriptor, Integer, Void> readDs = gatt.readDescriptor(ds);
 
@@ -593,9 +640,15 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
         when(mockGatt.readDescriptor(ds)).thenReturn(true);
         when(ds.getUuid()).thenReturn(TEST_UUID1);
+        when(ds.getCharacteristic()).thenReturn(characteristic);
 
         Promise<BluetoothGattDescriptor, Integer, Void> readDs = gatt.readDescriptor(ds);
         gatt.onDescriptorRead(mockGatt, ds, BluetoothGatt.GATT_SUCCESS);
@@ -620,9 +673,15 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
         when(mockGatt.readDescriptor(ds)).thenReturn(true);
         when(ds.getUuid()).thenReturn(TEST_UUID1);
+        when(ds.getCharacteristic()).thenReturn(characteristic);
 
         Promise<BluetoothGattDescriptor, Integer, Void> readDs = gatt.readDescriptor(ds);
         gatt.onDescriptorRead(mockGatt, ds, BluetoothGatt.GATT_FAILURE);
@@ -641,12 +700,19 @@ public class AsyncBluetoothGattTest {
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
 
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds1 = mock(BluetoothGattDescriptor.class);
         when(mockGatt.readDescriptor(ds1)).thenReturn(true);
         when(ds1.getUuid()).thenReturn(TEST_UUID1);
+        when(ds1.getCharacteristic()).thenReturn(characteristic);
         BluetoothGattDescriptor ds2 = mock(BluetoothGattDescriptor.class);
         when(mockGatt.readDescriptor(ds2)).thenReturn(true);
         when(ds2.getUuid()).thenReturn(TEST_UUID2);
+        when(ds2.getCharacteristic()).thenReturn(characteristic);
         Promise<BluetoothGattDescriptor, Integer, Void> readDs1 = gatt.readDescriptor(ds1);
         Promise<BluetoothGattDescriptor, Integer, Void> readDs2 = gatt.readDescriptor(ds2);
         gatt.onDescriptorRead(mockGatt, ds2, BluetoothGatt.GATT_SUCCESS);
@@ -674,7 +740,13 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
+        when(ds.getCharacteristic()).thenReturn(characteristic);
 
         when(mockGatt.writeDescriptor(ds)).thenReturn(false);
         Promise<BluetoothGattDescriptor, Integer, Void> writeDs = gatt.writeDescriptor(ds);
@@ -692,9 +764,15 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
         when(mockGatt.writeDescriptor(ds)).thenReturn(true);
         when(ds.getUuid()).thenReturn(TEST_UUID1);
+        when(ds.getCharacteristic()).thenReturn(characteristic);
 
         Promise<BluetoothGattDescriptor, Integer, Void> writeDs = gatt.writeDescriptor(ds);
 
@@ -711,9 +789,15 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
         when(mockGatt.writeDescriptor(ds)).thenReturn(true);
         when(ds.getUuid()).thenReturn(TEST_UUID1);
+        when(ds.getCharacteristic()).thenReturn(characteristic);
 
         Promise<BluetoothGattDescriptor, Integer, Void> writeDs = gatt.writeDescriptor(ds);
         gatt.onDescriptorWrite(mockGatt, ds, BluetoothGatt.GATT_SUCCESS);
@@ -738,9 +822,15 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds = mock(BluetoothGattDescriptor.class);
         when(mockGatt.writeDescriptor(ds)).thenReturn(true);
         when(ds.getUuid()).thenReturn(TEST_UUID1);
+        when(ds.getCharacteristic()).thenReturn(characteristic);
 
         Promise<BluetoothGattDescriptor, Integer, Void> writeDs = gatt.writeDescriptor(ds);
         gatt.onDescriptorWrite(mockGatt, ds, BluetoothGatt.GATT_FAILURE);
@@ -759,12 +849,19 @@ public class AsyncBluetoothGattTest {
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
 
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(TEST_UUID1);
+        when(characteristic.getService()).thenReturn(service);
         BluetoothGattDescriptor ds1 = mock(BluetoothGattDescriptor.class);
         when(mockGatt.writeDescriptor(ds1)).thenReturn(true);
         when(ds1.getUuid()).thenReturn(TEST_UUID1);
+        when(ds1.getCharacteristic()).thenReturn(characteristic);
         BluetoothGattDescriptor ds2 = mock(BluetoothGattDescriptor.class);
         when(mockGatt.writeDescriptor(ds2)).thenReturn(true);
         when(ds2.getUuid()).thenReturn(TEST_UUID2);
+        when(ds2.getCharacteristic()).thenReturn(characteristic);
         Promise<BluetoothGattDescriptor, Integer, Void> writeDs1 = gatt.writeDescriptor(ds1);
         Promise<BluetoothGattDescriptor, Integer, Void> writeDs2 = gatt.writeDescriptor(ds2);
         gatt.onDescriptorWrite(mockGatt, ds2, BluetoothGatt.GATT_SUCCESS);
@@ -792,7 +889,11 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
 
         when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(false);
         Promise<Void, Void, BluetoothGattCharacteristic> notifyCh = gatt.setCharacteristicNotification(ch, true);
@@ -810,9 +911,12 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
-        when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(true);
         when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
+        when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(true);
 
         Promise<Void, Void, BluetoothGattCharacteristic> notifyCh = gatt.setCharacteristicNotification(ch, true);
 
@@ -829,9 +933,12 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
-        when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(true);
         when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
+        when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(true);
 
         Promise<Void, Void, BluetoothGattCharacteristic> notifyCh = gatt.setCharacteristicNotification(ch, true);
         notifyCh.progress(new ProgressCallback<BluetoothGattCharacteristic>() {
@@ -856,10 +963,13 @@ public class AsyncBluetoothGattTest {
         AsyncBluetoothGatt gatt = new AsyncBluetoothGatt(device, context, false);
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch = mock(BluetoothGattCharacteristic.class);
+        when(ch.getUuid()).thenReturn(TEST_UUID1);
+        when(ch.getService()).thenReturn(service);
         when(mockGatt.setCharacteristicNotification(ch, true)).thenReturn(true);
         when(mockGatt.setCharacteristicNotification(ch, false)).thenReturn(true);
-        when(ch.getUuid()).thenReturn(TEST_UUID1);
 
         Promise<Void, Void, BluetoothGattCharacteristic> notifyCh = gatt.setCharacteristicNotification(ch, true);
         Promise<Void, Void, BluetoothGattCharacteristic> disableCh = gatt.setCharacteristicNotification(ch, false);
@@ -881,12 +991,16 @@ public class AsyncBluetoothGattTest {
         when(device.connectGatt(context, false, gatt)).thenReturn(mockGatt);
         gatt.connect();
 
+        BluetoothGattService service = mock(BluetoothGattService.class);
+        when(service.getUuid()).thenReturn(TEST_UUID1);
         BluetoothGattCharacteristic ch1 = mock(BluetoothGattCharacteristic.class);
         when(mockGatt.setCharacteristicNotification(ch1, true)).thenReturn(true);
         when(ch1.getUuid()).thenReturn(TEST_UUID1);
+        when(ch1.getService()).thenReturn(service);
         BluetoothGattCharacteristic ch2 = mock(BluetoothGattCharacteristic.class);
         when(mockGatt.setCharacteristicNotification(ch2, true)).thenReturn(true);
         when(ch2.getUuid()).thenReturn(TEST_UUID2);
+        when(ch2.getService()).thenReturn(service);
         Promise<Void, Void, BluetoothGattCharacteristic> notifyCh1 = gatt.setCharacteristicNotification(ch1, true);
         Promise<Void, Void, BluetoothGattCharacteristic> notifyCh2 = gatt.setCharacteristicNotification(ch2, true);
         notifyCh1.progress(new ProgressCallback<BluetoothGattCharacteristic>() {

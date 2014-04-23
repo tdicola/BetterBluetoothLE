@@ -8,6 +8,8 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.jdeferred.Promise;
 import org.jdeferred.impl.DeferredObject;
 
@@ -28,22 +30,94 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     private DeferredObject<Void, Integer, Void> discoverServices;
     private DeferredObject<Void, Integer, Void> executeReliableWrite;
     private DeferredObject<Integer, Integer, Void> readRemoteRssi;
-    // TODO: Are descriptor UUIDs globally unique? Characteristics too?
-    private HashMap<UUID, DeferredObject<BluetoothGattCharacteristic, Integer, Void>> readCharacteristic;
-    private HashMap<UUID, DeferredObject<BluetoothGattCharacteristic, Integer, Void>> writeCharacteristic;
-    private HashMap<UUID, DeferredObject<Void, Void, BluetoothGattCharacteristic>> changeCharacteristic;
-    private HashMap<UUID, DeferredObject<BluetoothGattDescriptor, Integer, Void>> readDescriptor;
-    private HashMap<UUID, DeferredObject<BluetoothGattDescriptor, Integer, Void>> writeDescriptor;
+    private HashMap<CharacteristicKey, DeferredObject<BluetoothGattCharacteristic, Integer, Void>> readCharacteristic;
+    private HashMap<CharacteristicKey, DeferredObject<BluetoothGattCharacteristic, Integer, Void>> writeCharacteristic;
+    private HashMap<CharacteristicKey, DeferredObject<Void, Void, BluetoothGattCharacteristic>> changeCharacteristic;
+    private HashMap<DescriptorKey, DeferredObject<BluetoothGattDescriptor, Integer, Void>> readDescriptor;
+    private HashMap<DescriptorKey, DeferredObject<BluetoothGattDescriptor, Integer, Void>> writeDescriptor;
+
+    private class CharacteristicKey {
+        private UUID service;
+        private UUID characteristic;
+        public CharacteristicKey(UUID service, UUID characteristic) {
+            this.service = service;
+            this.characteristic = characteristic;
+        }
+        public CharacteristicKey(BluetoothGattCharacteristic characteristic) {
+            this.service = characteristic.getService().getUuid();
+            this.characteristic = characteristic.getUuid();
+        }
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder()
+                    .append(service)
+                    .append(characteristic)
+                    .toHashCode();
+        }
+        @Override
+        public boolean equals(Object o) {
+            if (o == null)
+                return false;
+            if (o == this)
+                return true;
+            if (!(o instanceof CharacteristicKey))
+                return false;
+            CharacteristicKey other = (CharacteristicKey)o;
+            return new EqualsBuilder()
+                    .append(service, other.service)
+                    .append(characteristic, other.characteristic)
+                    .isEquals();
+        }
+    }
+
+    private class DescriptorKey {
+        private UUID service;
+        private UUID characteristic;
+        private UUID descriptor;
+        public DescriptorKey(UUID service, UUID characteristic, UUID descriptor) {
+            this.service = service;
+            this.characteristic = characteristic;
+            this.descriptor = descriptor;
+        }
+        public DescriptorKey(BluetoothGattDescriptor descriptor) {
+            this.service = descriptor.getCharacteristic().getService().getUuid();
+            this.characteristic = descriptor.getCharacteristic().getUuid();
+            this.descriptor = descriptor.getUuid();
+        }
+        @Override
+        public int hashCode() {
+            return new HashCodeBuilder()
+                    .append(service)
+                    .append(characteristic)
+                    .append(descriptor)
+                    .toHashCode();
+        }
+        @Override
+        public boolean equals(Object o) {
+            if (o == null)
+                return false;
+            if (o == this)
+                return true;
+            if (!(o instanceof DescriptorKey))
+                return false;
+            DescriptorKey other = (DescriptorKey)o;
+            return new EqualsBuilder()
+                    .append(service, other.service)
+                    .append(characteristic, other.characteristic)
+                    .append(descriptor, other.descriptor)
+                    .isEquals();
+        }
+    }
 
     public AsyncBluetoothGatt(BluetoothDevice device, Context context, boolean autoConnect) {
         this.device = device;
         this.context = context;
         this.autoConnect = autoConnect;
-        readCharacteristic = new HashMap<UUID, DeferredObject<BluetoothGattCharacteristic, Integer, Void>>();
-        writeCharacteristic = new HashMap<UUID, DeferredObject<BluetoothGattCharacteristic, Integer, Void>>();
-        readDescriptor = new HashMap<UUID, DeferredObject<BluetoothGattDescriptor, Integer, Void>>();
-        writeDescriptor = new HashMap<UUID, DeferredObject<BluetoothGattDescriptor, Integer, Void>>();
-        changeCharacteristic = new HashMap<UUID, DeferredObject<Void, Void, BluetoothGattCharacteristic>>();
+        readCharacteristic = new HashMap<CharacteristicKey, DeferredObject<BluetoothGattCharacteristic, Integer, Void>>();
+        writeCharacteristic = new HashMap<CharacteristicKey, DeferredObject<BluetoothGattCharacteristic, Integer, Void>>();
+        readDescriptor = new HashMap<DescriptorKey, DeferredObject<BluetoothGattDescriptor, Integer, Void>>();
+        writeDescriptor = new HashMap<DescriptorKey, DeferredObject<BluetoothGattDescriptor, Integer, Void>>();
+        changeCharacteristic = new HashMap<CharacteristicKey, DeferredObject<Void, Void, BluetoothGattCharacteristic>>();
     }
 
     private void checkConnected() {
@@ -204,7 +278,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     public Promise<BluetoothGattCharacteristic, Integer, Void> readCharacteristic(BluetoothGattCharacteristic characteristic) {
         checkConnected();
         // If there's already a request in flight, return the current promise for results.
-        DeferredObject<BluetoothGattCharacteristic, Integer, Void> deferred = readCharacteristic.get(characteristic.getUuid());
+        DeferredObject<BluetoothGattCharacteristic, Integer, Void> deferred = readCharacteristic.get(new CharacteristicKey(characteristic));
         if (deferred != null && deferred.isPending()) {
             return deferred.promise();
         }
@@ -213,7 +287,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         if (!gatt.readCharacteristic(characteristic)) {
             deferred.reject(null);
         }
-        readCharacteristic.put(characteristic.getUuid(), deferred);
+        readCharacteristic.put(new CharacteristicKey(characteristic), deferred);
         return deferred.promise();
     }
 
@@ -221,7 +295,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     public Promise<BluetoothGattCharacteristic, Integer, Void> writeCharacteristic(BluetoothGattCharacteristic characteristic) {
         checkConnected();
         // If there's already a request in flight, return the current promise for results.
-        DeferredObject<BluetoothGattCharacteristic, Integer, Void> deferred = writeCharacteristic.get(characteristic.getUuid());
+        DeferredObject<BluetoothGattCharacteristic, Integer, Void> deferred = writeCharacteristic.get(new CharacteristicKey(characteristic));
         if (deferred != null && deferred.isPending()) {
             return deferred.promise();
         }
@@ -230,7 +304,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         if (!gatt.writeCharacteristic(characteristic)) {
             deferred.reject(null);
         }
-        writeCharacteristic.put(characteristic.getUuid(), deferred);
+        writeCharacteristic.put(new CharacteristicKey(characteristic), deferred);
         return deferred.promise();
     }
 
@@ -238,7 +312,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     // characteristic changes through its progress update.
     public Promise<Void, Void, BluetoothGattCharacteristic> setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enable) {
         checkConnected();
-        DeferredObject<Void, Void, BluetoothGattCharacteristic> deferred = changeCharacteristic.get(characteristic.getUuid());
+        DeferredObject<Void, Void, BluetoothGattCharacteristic> deferred = changeCharacteristic.get(new CharacteristicKey(characteristic));
         // Handle when enable has already been called.
         if (enable && deferred != null && deferred.isPending()) {
             // Return the in progress deferred.
@@ -248,7 +322,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         else if (!enable && deferred != null) {
             // Finish the current deferred.
             deferred.resolve(null);
-            changeCharacteristic.remove(characteristic.getUuid());
+            changeCharacteristic.remove(new CharacteristicKey(characteristic));
             // Disable notifications.
             deferred = new DeferredObject<Void, Void, BluetoothGattCharacteristic>();
             if (!gatt.setCharacteristicNotification(characteristic, false)) {
@@ -269,7 +343,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
             if (!gatt.setCharacteristicNotification(characteristic, true)) {
                 deferred.reject(null);
             }
-            changeCharacteristic.put(characteristic.getUuid(), deferred);
+            changeCharacteristic.put(new CharacteristicKey(characteristic), deferred);
             return deferred.promise();
         }
         // Ignore disabling a notification that isn't enabled.
@@ -285,7 +359,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     public Promise<BluetoothGattDescriptor, Integer, Void> readDescriptor(BluetoothGattDescriptor descriptor) {
         checkConnected();
         // If there's already a request in flight, return the current promise for results.
-        DeferredObject<BluetoothGattDescriptor, Integer, Void> deferred = readDescriptor.get(descriptor.getUuid());
+        DeferredObject<BluetoothGattDescriptor, Integer, Void> deferred = readDescriptor.get(new DescriptorKey(descriptor));
         if (deferred != null && deferred.isPending()) {
             return deferred.promise();
         }
@@ -294,7 +368,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         if (!gatt.readDescriptor(descriptor)) {
             deferred.reject(null);
         }
-        readDescriptor.put(descriptor.getUuid(), deferred);
+        readDescriptor.put(new DescriptorKey(descriptor), deferred);
         return deferred.promise();
     }
 
@@ -302,7 +376,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     public Promise<BluetoothGattDescriptor, Integer, Void> writeDescriptor(BluetoothGattDescriptor descriptor) {
         checkConnected();
         // If there's already a request in flight, return the current promise for results.
-        DeferredObject<BluetoothGattDescriptor, Integer, Void> deferred = writeDescriptor.get(descriptor.getUuid());
+        DeferredObject<BluetoothGattDescriptor, Integer, Void> deferred = writeDescriptor.get(new DescriptorKey(descriptor));
         if (deferred != null && deferred.isPending()) {
             return deferred.promise();
         }
@@ -311,7 +385,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         if (!gatt.writeDescriptor(descriptor)) {
             deferred.reject(null);
         }
-        writeDescriptor.put(descriptor.getUuid(), deferred);
+        writeDescriptor.put(new DescriptorKey(descriptor), deferred);
         return deferred.promise();
     }
 
@@ -353,7 +427,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     @Override
     public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
-        DeferredObject<BluetoothGattCharacteristic, Integer, Void> deferred = readCharacteristic.get(characteristic.getUuid());
+        DeferredObject<BluetoothGattCharacteristic, Integer, Void> deferred = readCharacteristic.get(new CharacteristicKey(characteristic));
         if (deferred != null) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 deferred.resolve(characteristic);
@@ -367,7 +441,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         super.onCharacteristicChanged(gatt, characteristic);
-        DeferredObject<Void, Void, BluetoothGattCharacteristic> deferred = changeCharacteristic.get(characteristic.getUuid());
+        DeferredObject<Void, Void, BluetoothGattCharacteristic> deferred = changeCharacteristic.get(new CharacteristicKey(characteristic));
         if (deferred != null) {
             // Send a progress update with the changed characteristic.
             deferred.notify(characteristic);
@@ -377,7 +451,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     @Override
     public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
         super.onCharacteristicRead(gatt, characteristic, status);
-        DeferredObject<BluetoothGattCharacteristic, Integer, Void> deferred = writeCharacteristic.get(characteristic.getUuid());
+        DeferredObject<BluetoothGattCharacteristic, Integer, Void> deferred = writeCharacteristic.get(new CharacteristicKey(characteristic));
         if (deferred != null) {
             // Resolve or reject the deferred based on success or failure of the characteristic write.
             if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -392,7 +466,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     @Override
     public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorRead(gatt, descriptor, status);
-        DeferredObject<BluetoothGattDescriptor, Integer, Void> deferred = readDescriptor.get(descriptor.getUuid());
+        DeferredObject<BluetoothGattDescriptor, Integer, Void> deferred = readDescriptor.get(new DescriptorKey(descriptor));
         if (deferred != null) {
             // Resolve or reject the deferred based on success or failure of the descriptor read.
             if (status == BluetoothGatt.GATT_SUCCESS) {
@@ -421,7 +495,7 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
         super.onDescriptorWrite(gatt, descriptor, status);
-        DeferredObject<BluetoothGattDescriptor, Integer, Void> deferred = writeDescriptor.get(descriptor.getUuid());
+        DeferredObject<BluetoothGattDescriptor, Integer, Void> deferred = writeDescriptor.get(new DescriptorKey(descriptor));
         if (deferred != null) {
             // Resolve or reject the deferred based on success or failure of the descriptor write.
             if (status == BluetoothGatt.GATT_SUCCESS) {
