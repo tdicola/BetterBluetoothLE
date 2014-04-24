@@ -8,8 +8,7 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
+import com.google.common.base.Objects;
 import org.jdeferred.Promise;
 import org.jdeferred.impl.DeferredObject;
 
@@ -52,28 +51,24 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         }
         @Override
         public int hashCode() {
-            return new HashCodeBuilder()
-                    .append(service)
-                    .append(serviceInstance)
-                    .append(characteristic)
-                    .append(charInstance)
-                    .toHashCode();
+            return Objects.hashCode(service, serviceInstance, characteristic, charInstance);
         }
         @Override
         public boolean equals(Object o) {
-            if (o == null)
+            if (o == null) {
                 return false;
-            if (o == this)
+            }
+            if (o == this) {
                 return true;
-            if (!(o instanceof CharacteristicKey))
+            }
+            if (!(o instanceof CharacteristicKey)) {
                 return false;
+            }
             CharacteristicKey other = (CharacteristicKey)o;
-            return new EqualsBuilder()
-                    .append(service, other.service)
-                    .append(serviceInstance, other.serviceInstance)
-                    .append(characteristic, other.characteristic)
-                    .append(charInstance, other.charInstance)
-                    .isEquals();
+            return Objects.equal(service, other.service) &&
+                   Objects.equal(serviceInstance, other.serviceInstance) &&
+                   Objects.equal(characteristic, other.characteristic) &&
+                   Objects.equal(charInstance, other.charInstance);
         }
     }
 
@@ -96,30 +91,25 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         }
         @Override
         public int hashCode() {
-            return new HashCodeBuilder()
-                    .append(service)
-                    .append(serviceInstance)
-                    .append(characteristic)
-                    .append(charInstance)
-                    .append(descriptor)
-                    .toHashCode();
+            return Objects.hashCode(service, serviceInstance, characteristic, charInstance, descriptor);
         }
         @Override
         public boolean equals(Object o) {
-            if (o == null)
+            if (o == null) {
                 return false;
-            if (o == this)
+            }
+            if (o == this) {
                 return true;
-            if (!(o instanceof DescriptorKey))
+            }
+            if (!(o instanceof DescriptorKey)) {
                 return false;
+            }
             DescriptorKey other = (DescriptorKey)o;
-            return new EqualsBuilder()
-                    .append(service, other.service)
-                    .append(serviceInstance, other.serviceInstance)
-                    .append(characteristic, other.characteristic)
-                    .append(charInstance, other.charInstance)
-                    .append(descriptor, other.descriptor)
-                    .isEquals();
+            return Objects.equal(service, other.service) &&
+                    Objects.equal(serviceInstance, other.serviceInstance) &&
+                    Objects.equal(characteristic, other.characteristic) &&
+                    Objects.equal(charInstance, other.charInstance) &&
+                    Objects.equal(descriptor, other.descriptor);
         }
     }
 

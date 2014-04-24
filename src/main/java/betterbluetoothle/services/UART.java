@@ -1,17 +1,17 @@
 package betterbluetoothle.services;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.content.Context;
 
-import org.jdeferred.DoneCallback;
+import com.google.common.primitives.Bytes;
+
 import org.jdeferred.DonePipe;
 import org.jdeferred.ProgressCallback;
 import org.jdeferred.Promise;
+import org.jdeferred.impl.DeferredObject;
 
-import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.UUID;
@@ -32,18 +32,40 @@ public class UART {
     private BluetoothGattCharacteristic tx;
     // TODO: This deque of bytes is not efficient for storing the buffer of received data.
     private ArrayDeque<Byte> received;
+    private DeferredObject<Void, Void, Void> connected;
+    private DeferredObject<Void, Void, Void> available;
 
-    public UART(BluetoothDevice device, Context context, boolean autoConnect, boolean runOnUiThread) {
+    public UART(BluetoothDevice device, Context context, boolean autoConnect) {
         gatt = new AsyncBluetoothGatt(device, context, autoConnect);
         received = new ArrayDeque<Byte>();
     }
 
-    public static void findFirstDevice() {
-
+    // When this promise is resolved the first available UART device has been found.
+    public static Promise<UART, Void, Void> findFirstDevice(Context context, boolean autoConnect) {
+        return null;
     }
 
-    // Return promise that will be resolved when the UART device is connected and ready for communication.
-    public void connect(final Runnable onConnected, final Runnable onDisconnected, final Runnable onDataReceived) {
+    // When this promise is resolved the UART is connected and ready to send data.
+    public Promise<Void, Void, Void> whenConnected() {
+        return connected.promise();
+    }
+
+    // When this promise has a progress update the UART has new data available to read.
+    public Promise<Void, Void, Void> whenAvailable() {
+        return available.promise();
+    }
+
+    // When this promise is resolved the UART is disconnected.
+    public Promise<Void, Integer, Void> whenDisconnected() {
+        return gatt.disconnected();
+    }
+
+    //TODO: Add whenError to notify when an error occured setting up or using the UART?
+
+    // Connect to the device's UART service and setup code to fire connected, available, and disconnected promises.
+    public void connect() {
+        connected = new DeferredObject<Void, Void, Void>();
+        available = new DeferredObject<Void, Void, Void>();
         // Connect to the device.
         gatt.connect().then(new DonePipe<Void, Void, Integer, Void>() {
             @Override
@@ -59,59 +81,49 @@ public class UART {
                 rx = gatt.getService(UART_UUID).getCharacteristic(RX_UUID);
                 tx = gatt.getService(UART_UUID).getCharacteristic(TX_UUID);
                 // Notify that device is connected.
-                if (onConnected != null) {
-                    onConnected.run();
-                }
+                connected.resolve(null);
                 // Now setup notifications for RX characteristic changes.
                 // First change the client descriptor to enable notifications and write it to the device.
                 BluetoothGattDescriptor client = rx.getDescriptor(CLIENT_UUID);
                 client.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                 return gatt.writeDescriptor(client);
             }
-            // Switch to promise for RX client descriptor update.
+        // Switch to promise for RX client descriptor update.
         }).then(new DonePipe<BluetoothGattDescriptor, Void, Void, BluetoothGattCharacteristic>() {
             @Override
             public Promise<Void, Void, BluetoothGattCharacteristic> pipeDone(BluetoothGattDescriptor result) {
-                // Finally enable notifications on RX characteristic changes locally.
+                // Descriptor update complete, now enable notifications on RX characteristic changes.
                 return gatt.setCharacteristicNotification(rx, true);
             }
-        // Switch to promise for RX characteristic updates (i.e. data received).
+            // Switch to promise for RX characteristic updates (i.e. data received).
         }).progress(new ProgressCallback<BluetoothGattCharacteristic>() {
             @Override
             public void onProgress(BluetoothGattCharacteristic progress) {
+                // RX characteristic has changed.
                 // Update buffer of received bytes.
-                dataReceived(progress);
+                updateReceived(progress);
                 // Notify data is available for reading.
-                if (onDataReceived != null) {
-                    onDataReceived.run();
-                }
+                available.notify(null);
             }
         });
-        gatt.disconnected().done(new DoneCallback<Void>() {
-                @Override
-                public void onDone(Void result) {
-                    if (onDisconnected != null) {
-                        onDisconnected.run();
-                    }
-                }
-            }
-        );
     }
 
-    private synchronized void dataReceived(BluetoothGattCharacteristic rx) {
-        for (byte b : rx.getValue()) {
-            received.push(b);
-        }
+    // Add data to received buffer.
+    private synchronized void updateReceived(BluetoothGattCharacteristic rx) {
+        received.addAll(Bytes.asList(rx.getValue()));
     }
 
+    // Return amount of bytes available in received buffer.
     public synchronized int available() {
         return received.size();
     }
 
+    // Disconnect from the UART.
     public void disconnect() {
         gatt.disconnect();
     }
 
+    // Write bytes to the UART.
     public void write(byte[] data) {
         if (tx == null) {
             return;
@@ -120,16 +132,35 @@ public class UART {
         gatt.writeCharacteristic(tx);
     }
 
+    // Write a string to the UART.  String will be encoded in UTF-8 before sending to UART.
     public void write(String data) {
         write(data.getBytes(Charset.forName("UTF-8")));
     }
 
+    // Read up to count bytes of data from the UART received data.  Less data than requested might be returned!
     public synchronized byte[] read(int count) {
         int size = count < received.size() ? count : received.size();
         byte[] result = new byte[size];
         for (int i = 0; i < size; ++i) {
-            result[i] = received.pop();
+            result[i] = received.remove();
         }
         return result;
+    }
+
+    // Read all bytes of data from the UART.
+    public synchronized byte[] readAll() {
+        byte[] result = Bytes.toArray(received);
+        received.clear();
+        return result;
+    }
+
+    // Read bytes as a UTF-8 string up to length bytes long.  Less data than requested might be returned!
+    public synchronized String readString(int length) {
+        return new String(read(length), Charset.forName("UTF-8"));
+    }
+
+    // Read all bytes as a UTF-8 string.
+    public synchronized String readAllString() {
+        return new String(readAll(), Charset.forName("UTF-8"));
     }
 }
