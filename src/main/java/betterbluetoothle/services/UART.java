@@ -1,5 +1,6 @@
 package betterbluetoothle.services;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
@@ -17,6 +18,7 @@ import java.util.ArrayDeque;
 import java.util.UUID;
 
 import betterbluetoothle.async.AsyncBluetoothGatt;
+import betterbluetoothle.async.AsyncBluetoothLeScan;
 
 public class UART {
 
@@ -25,8 +27,10 @@ public class UART {
     public static UUID TX_UUID = UUID.fromString("6E400002-B5A3-F393-E0A9-E50E24DCCA9E");
     public static UUID RX_UUID = UUID.fromString("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
     // UUID for the BTLE client characteristic which is necessary for notifications.
-    public static UUID CLIENT_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
+    private static UUID CLIENT_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
+    private static AsyncBluetoothLeScan scanner;
+    private static DeferredObject<UART, Void, Void> found;
     private AsyncBluetoothGatt gatt;
     private BluetoothGattCharacteristic rx;
     private BluetoothGattCharacteristic tx;
@@ -41,8 +45,22 @@ public class UART {
     }
 
     // When this promise is resolved the first available UART device has been found.
-    public static Promise<UART, Void, Void> findFirstDevice(Context context, boolean autoConnect) {
-        return null;
+    public static Promise<UART, Void, Void> findFirstDevice(BluetoothAdapter adapter, final Context context, final boolean autoConnect) {
+        scanner = new AsyncBluetoothLeScan(adapter);
+        found = new DeferredObject<UART, Void, Void>();
+        // Scan for devices with the UART service.
+        scanner.start(UART_UUID).progress(new ProgressCallback<AsyncBluetoothLeScan.ScanResult>() {
+            @Override
+            public void onProgress(AsyncBluetoothLeScan.ScanResult progress) {
+                // Found a device.
+                // Stop the scan.
+                scanner.stop();
+                scanner = null;
+                // Resolve the found promise with the UART.
+                found.resolve(new UART(progress.device, context, autoConnect));
+            }
+        });
+        return found.promise();
     }
 
     // When this promise is resolved the UART is connected and ready to send data.
