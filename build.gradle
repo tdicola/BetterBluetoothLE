@@ -64,7 +64,7 @@ dependencies {
         }
     }
 
-    compile 'org.jdeferred:jdeferred-android:1.2.0'
+    compile 'org.jdeferred:jdeferred-core:1.2.0'
     compile 'org.apache.commons:commons-lang3:3.3.2'
 
     testCompile 'junit:junit:4.11'
