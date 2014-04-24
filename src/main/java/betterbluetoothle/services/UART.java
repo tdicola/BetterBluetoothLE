@@ -45,7 +45,7 @@ public class UART {
     }
 
     // When this promise is resolved the first available UART device has been found.
-    public static Promise<UART, Void, Void> findFirstDevice(BluetoothAdapter adapter, final Context context, final boolean autoConnect) {
+    public static Promise<UART, Void, Void> findFirst(BluetoothAdapter adapter, final Context context, final boolean autoConnect) {
         scanner = new AsyncBluetoothLeScan(adapter);
         found = new DeferredObject<UART, Void, Void>();
         // Scan for devices with the UART service.
