@@ -36,19 +36,27 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
     private HashMap<DescriptorKey, DeferredObject<BluetoothGattDescriptor, Integer, Void>> readDescriptor;
     private HashMap<DescriptorKey, DeferredObject<BluetoothGattDescriptor, Integer, Void>> writeDescriptor;
 
-    // Key for uniquely identifying a characteristic based on its UUID and parent service UUID.
+    // Key for uniquely identifying a characteristic is composed of:
+    // - Characteristic UUID + instance ID
+    // - Parent service UUID + instance ID
     private class CharacteristicKey {
         private UUID service;
+        private int serviceInstance;
         private UUID characteristic;
+        private int charInstance;
         public CharacteristicKey(BluetoothGattCharacteristic characteristic) {
             this.service = characteristic.getService().getUuid();
+            this.serviceInstance = characteristic.getService().getInstanceId();
             this.characteristic = characteristic.getUuid();
+            this.charInstance = characteristic.getInstanceId();
         }
         @Override
         public int hashCode() {
             return new HashCodeBuilder()
                     .append(service)
+                    .append(serviceInstance)
                     .append(characteristic)
+                    .append(charInstance)
                     .toHashCode();
         }
         @Override
@@ -62,26 +70,37 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
             CharacteristicKey other = (CharacteristicKey)o;
             return new EqualsBuilder()
                     .append(service, other.service)
+                    .append(serviceInstance, other.serviceInstance)
                     .append(characteristic, other.characteristic)
+                    .append(charInstance, other.charInstance)
                     .isEquals();
         }
     }
 
-    // Key for uniquely identifying a descriptor based on its UUID, parent characteristic UUID, and parent service UUID.
+    // Key for uniquely identifying a descriptor is composed of:
+    // - Descriptor UUID
+    // - Parent characteristic UUID + instance ID
+    // - Parent service UUID + instance ID
     private class DescriptorKey {
         private UUID service;
+        private int serviceInstance;
         private UUID characteristic;
+        private int charInstance;
         private UUID descriptor;
         public DescriptorKey(BluetoothGattDescriptor descriptor) {
             this.service = descriptor.getCharacteristic().getService().getUuid();
+            this.serviceInstance = descriptor.getCharacteristic().getService().getInstanceId();
             this.characteristic = descriptor.getCharacteristic().getUuid();
+            this.charInstance = descriptor.getCharacteristic().getInstanceId();
             this.descriptor = descriptor.getUuid();
         }
         @Override
         public int hashCode() {
             return new HashCodeBuilder()
                     .append(service)
+                    .append(serviceInstance)
                     .append(characteristic)
+                    .append(charInstance)
                     .append(descriptor)
                     .toHashCode();
         }
@@ -96,7 +115,9 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
             DescriptorKey other = (DescriptorKey)o;
             return new EqualsBuilder()
                     .append(service, other.service)
+                    .append(serviceInstance, other.serviceInstance)
                     .append(characteristic, other.characteristic)
+                    .append(charInstance, other.charInstance)
                     .append(descriptor, other.descriptor)
                     .isEquals();
         }
