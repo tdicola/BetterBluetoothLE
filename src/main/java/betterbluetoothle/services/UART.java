@@ -135,10 +135,10 @@ public class UART {
 
     // Interface to define the UART event handler functions for connected, disconnected, and data
     // available events.
-    public abstract class Callback {
-        public void connected() {}
-        public void disconnected() {}
-        public void available() {}
+    public interface Callback {
+        public void connected();
+        public void disconnected();
+        public void available();
     }
 
     // Register a class to receive callbacks of UART events.
