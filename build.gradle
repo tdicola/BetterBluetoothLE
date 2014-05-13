@@ -91,6 +91,7 @@ dependencies {
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile 'org.powermock:powermock-mockito-release-full:1.5.4'
 
+    // Test dependencies are repeated so Android Studio is happy about editing the source with intellisense.
     androidTestCompile 'junit:junit:4.11'
     androidTestCompile('org.robolectric:robolectric:2.3-SNAPSHOT') {
         exclude module: 'classworlds'
