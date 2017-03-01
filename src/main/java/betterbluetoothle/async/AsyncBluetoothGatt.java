@@ -288,10 +288,11 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         }
         // Read descriptor and return a promise for the results.
         deferred = new DeferredObject<BluetoothGattCharacteristic, Integer, Void>();
+        readCharacteristic.put(new CharacteristicKey(characteristic), deferred);
+
         if (!gatt.readCharacteristic(characteristic)) {
             deferred.reject(null);
         }
-        readCharacteristic.put(new CharacteristicKey(characteristic), deferred);
         return deferred.promise();
     }
 
@@ -305,10 +306,11 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         }
         // Read descriptor and return a promise for the results.
         deferred = new DeferredObject<BluetoothGattCharacteristic, Integer, Void>();
+        writeCharacteristic.put(new CharacteristicKey(characteristic), deferred);
+
         if (!gatt.writeCharacteristic(characteristic)) {
             deferred.reject(null);
         }
-        writeCharacteristic.put(new CharacteristicKey(characteristic), deferred);
         return deferred.promise();
     }
 
@@ -344,10 +346,11 @@ public class AsyncBluetoothGatt extends BluetoothGattCallback {
         else if (enable) {
             // Setup and return the deferred for receiving progress of notification changes.
             deferred = new DeferredObject<Void, Void, BluetoothGattCharacteristic>();
+            changeCharacteristic.put(new CharacteristicKey(characteristic), deferred);
+            
             if (!gatt.setCharacteristicNotification(characteristic, true)) {
                 deferred.reject(null);
             }
-            changeCharacteristic.put(new CharacteristicKey(characteristic), deferred);
             return deferred.promise();
         }
         // Ignore disabling a notification that isn't enabled.
